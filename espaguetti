@@ -1,0 +1,161 @@
+//-------------------------abrir archivos txt
+// OpenDialog Demo
+//
+// This macro demonstrates how do use the 
+// File.openDialog() macro function.
+  var colors=newArray("blue","red","green","magenta","orange","pink","yellow","#eeffbb","#eeeeff","#ffffdd");
+  count = 1;
+  cc=0;
+  aa=0;
+  bb=0;
+  maxy=0;
+  anostotal=newArray(1);
+  path = File.openDialog("Select a File");
+  //open(path); // open the file
+  dir = File.getParent(path);
+  name = File.getName(path);
+  //print("Path:", path);
+  //print("Name:", name);
+  print("Directory:", dir);
+  list = getFileList(dir);
+ //----------crear el espaguetti
+  Plot.create("espagueti", "años", "espesor");
+  Plot.setLineWidth(2);
+  Plot.setColor("red", "red");
+  Plot.setFontSize(24);
+  Plot.addLegend("años--espesores ");
+//-------------crear archivo resumen.txt
+  myDir=dir+"/"+"resumen.txt";	
+   if (File.exists(myDir))
+      print("ya existe");
+  else
+     save(myDir);
+//------------matriz maxima de años de todas las muestras
+  for (i=0; i<list.length; i++) {
+        if (endsWith(list[i], ".txt")&&!endsWith(list[i], "resumen.txt"))
+          {
+          //---------leer txt    
+path0=dir+"/"+list[i];
+ // Defines cell separator and line separator
+CellSeparator=",";
+LineSeparator="\n";
+FileValuesString=File.openAsString(path0);
+
+
+// Split each row into an array
+FileValuesRows=split(FileValuesString, LineSeparator);
+Column2Array=newArray(FileValuesRows.length-1);
+Column3Array=newArray(FileValuesRows.length-1);
+
+for (Rowi=1;Rowi<FileValuesRows.length; Rowi++){
+  FileValuesRowi=split(FileValuesRows[Rowi-1], CellSeparator);
+  Column2Array[Rowi-1]=FileValuesRowi[1];
+  Column3Array=newArray(FileValuesRows.length-1);
+  Array.getStatistics(Column3Array, min, max, mean, std);
+  maxy=maxOf(maxy,max);
+}
+if(anostotal.length<Column2Array.length){anostotal=Array.copy(Column2Array);}
+
+//Array.show(anostotal);
+
+          }}
+
+//-------------anostotal tiene los años maximos de la muestra mas larga.
+Plot.setLimits(anostotal[0]+10,anostotal[anostotal.length-1]-10, 0, 1000);
+
+
+  //----------lista de archivos
+  for (i=0; i<list.length; i++) {
+        if (endsWith(list[i], ".txt")&&!endsWith(list[i], "resumen.txt"))
+          {
+          //---------leer txt    
+path1=dir+"/"+list[i];
+ // Defines cell separator and line separator
+CellSeparator=",";
+LineSeparator="\n";
+FileValuesString=File.openAsString(path1);
+
+
+// Split each row into an array
+FileValuesRows=split(FileValuesString, LineSeparator);
+Column1Array=newArray(FileValuesRows.length-1);
+Column2Array=newArray(FileValuesRows.length-1);
+Column3Array=newArray(FileValuesRows.length-1);
+
+for (Rowi=1;Rowi<FileValuesRows.length; Rowi++){
+  FileValuesRowi=split(FileValuesRows[Rowi-1], CellSeparator);
+  Column1Array[Rowi-1]=FileValuesRowi[0];
+  Column2Array[Rowi-1]=FileValuesRowi[1];
+  Column3Array[Rowi-1]=FileValuesRowi[2];
+}
+//end if for Rowi
+
+//Array.show(Column1Array,Column2Array,Column3Array);
+
+//-------------------------añadir lineas
+
+  yyy = Column3Array;
+  xxx = Column2Array;
+
+  Plot.setColor(colors[cc]);
+  Plot.add("line", xxx, yyy);
+//----------------archivo resumen.
+if(aa==0){
+	rr= File.open(myDir); // display file open dialog
+	muestra=split(list[i], ".");
+    print(rr,"Años/muestra  , \t"+muestra[0] );
+    for (j=0; j<anostotal.length; j++) {
+	print(rr,anostotal[j]);
+	aa++;
+                                           }//fin for
+    File.close(rr);                                     
+	
+	    }//fin if primera entrada
+else {
+	  CellSeparator=",";
+      LineSeparator="\n";
+      resumen=File.openAsString(myDir);
+      resumenfilas=split(resumen, LineSeparator);
+      matrizanos=newArray(resumenfilas.length-1);
+      //extraer años de resumen.txt en matrizanos
+    
+      
+      rr= File.open(myDir);
+      muestra=split(list[i], ".");
+      print(rr,resumenfilas[0]+", "+muestra[0] );
+      
+     //-----------comparar anostotal (años de la muestra máxima)con column2Array(años de la muestra)
+    
+    
+       bb=0;
+      // print(anostotal.length,Column2Array.length,resumenfilas.length);
+       for (jj=1; jj<anostotal.length; jj++) {
+      if(Column2Array[bb]<anostotal[jj-1]){print(rr,resumenfilas[jj]+", NA");}
+      if(Column2Array[bb]>anostotal[jj-1]){print(rr,resumenfilas[jj]+", NA");}
+      if(Column2Array[bb]==anostotal[jj-1]){
+      	print(rr,resumenfilas[jj]+","+Column3Array[jj-1] );
+      	if (bb<Column2Array.length-1)  { bb++; }
+      	}
+      
+	
+                                             }//fin for
+
+
+      
+	  File.close(rr); 
+	}// resto de entradas
+
+
+          }//fin if .txt
+           
+ 
+  cc++;   
+  if(cc>9){cc=0;}   
+     }//fin for
+Plot.show();
+run("Show All");
+
+//----------------archivo resumen.
+
+
+
