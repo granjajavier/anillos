@@ -1,0 +1,143 @@
+tolerance=20;
+
+run("8-bit");
+//setTool("line");
+w=getWidth;
+h=getHeight;
+//---------------------------dibujar la linea central
+if((h%2)==1){c=(h+1)/2;}
+ else{c=h/2;}
+ 
+ yyy=newArray(100);//puntos de cada anillo
+//------------------------------seleccion de la linea de anillos
+   
+   ff=c;
+  setColor("red");
+  Overlay.drawLine(0,ff,w,ff);
+  Overlay.show;
+ var colors=newArray("blue","red","green","magenta","orange","pink","yellow");
+//------------------------------segmentación maxima de añillos
+     makeLine(0, ff, w,ff);
+     profile =getProfile;
+     maxLocs= Array.findMaxima(profile, tolerance,2);
+     minLocs= Array.findMinima(profile, tolerance,2);
+     Array.sort(maxLocs);
+     Array.sort(minLocs);
+     maxLocs=Array.concat(0,maxLocs);
+     nanillos =minOf(maxLocs.length,minLocs.length);
+     print(nanillos);
+ setColor("yellow");
+//--------------------------calcular el borde en cada segmento
+  for(kk=0;kk<nanillos;kk++){
+
+ 
+  //--------------------------dibujar los segmentos medios
+  for(ll=ff-50;ll<ff+50;ll++){      
+  makeLine(maxLocs[kk], ll, minLocs[kk]+5,ll);
+  diferencias =getProfile;
+  for (jj= 1; jj <  diferencias.length; jj++){
+      diferencias[jj-1]=diferencias[jj-1]-diferencias[jj];
+      if(diferencias[jj-1]<0){diferencias[jj-1]=0;}
+      }//fin for jj
+  diferencias[diferencias.length-1]=0;
+  qq=diferencias[0];  
+  pos=0;
+  for (jj= 0; jj <  diferencias.length; jj++){
+      if(diferencias[jj]>=qq){
+      qq=diferencias[jj];pos=jj;
+      }//fin if
+      }//fin for jj
+     
+  anillos=Array.concat(anillos,maxLocs[kk]+pos);
+  if((kk%2)==1){setColor("yellow");}
+  else{setColor("green");}
+  Overlay.drawLine(maxLocs[kk]+pos,ll,maxLocs[kk]+pos,ll);
+  Overlay.show;
+  //-------------------------------matriz de datos de longitud horizontal de cada anillo
+  yyy=Array.concat(yyy,maxLocs[kk]+pos);
+  }//fin ll bucle vertical de lineas
+  xxx=Array.getSequence(yyy.length);
+  //------------------------------regresiones multiples descartando puntos lejanos
+ 
+  nn=0;
+  while(nn<50){
+ 
+  Fit.doFit("2nd Degree Polynomial", xxx,yyy);
+  sdistancia=0;
+  sdistancimax=0;
+  indice=0;
+    for (jj= 1; jj <  yyy.length; jj++){
+    sdistancia=abs(yyy[jj]-Fit.f(jj));
+    if (sdistancia>sdistancimax){
+    sdistancimax=sdistancia;
+    indice=jj;
+    }//fin if
+    }// fin for jj
+    //-------------eliminación de los puntos mas distantes
+   /*
+    yyyant= Array.slice(yyy, 0, indice-1);
+    yyypos= Array.slice(yyy, indice+1, yyy.length);
+    yyy = Array.trim(yyy, 0);
+    yyy=Array.concat(yyyant,yyypos);
+
+    xxxant= Array.slice(xxx, 0, indice-1);
+    xxxpos= Array.slice(xxx, indice+1, xxx.length);
+    xxx = Array.trim(xxx, 0);
+    xxx=Array.concat(xxxant,xxxpos);
+  */
+    //-----------suavizado de los puntos mas distantes
+    yyy[indice]=Fit.f(indice);
+   
+    if(Fit.rSquared>0.9){break;}
+    nn++;
+  }//fin while
+  ///------------------------------regresión de cada anillo
+ 
+  Fit.doFit("2nd Degree Polynomial", xxx,yyy);
+  print("a="+d2s(Fit.p(0),6)+", b="+d2s(Fit.p(1),6)+" c="+d2s(Fit.p(2),6)+"   R^2="+d2s(Fit.rSquared,3));
+ 
+ 
+  //Fit.doFit("Straight Line", xxx,yyy);
+ // print("a="+d2s(Fit.p(0),6)+", b="+d2s(Fit.p(1),6)+"   R^2="+d2s(Fit.rSquared,3));
+  // pendiente=Fit.p(1);
+ 
+  //-------------------------------dibujar la linea tangente
+
+ long=yyy.length;
+
+ if((long%2)==1){pmedio=(long+1)/2;}
+ else{pmedio=long/2;}
+  pendiente=Fit.p(1)+2*Fit.p(2)*pmedio;
+  yyymedio=Fit.f(pmedio);
+
+     //setColor("blue");
+     setColor("pink");
+     Overlay.drawLine(yyymedio-pmedio*pendiente,c-pmedio,yyymedio+pmedio*pendiente,c+pmedio-1);
+     Overlay.show;
+     makeLine(yyymedio-pmedio*pendiente,c-pmedio,yyymedio+pmedio*pendiente,c+pmedio-1);
+     roiManager("add");
+     roiManager("Show All");
+     
+  //----------------------------------borrar yy en cada anillo
+  yyy = Array.trim(yyy, 0);
+
+  //selectWindow("45590(1).tif (RGB).tif");
+
+  }//fin   kk bucle de anillo horizonaal
+  Overlay.hide;
+  n = roiManager("count");
+  print(n);
+  for (i=0; i<n; i++) {
+      roiManager("select", i);
+      Roi.setName(i);
+      Roi.getCoordinates(x, y);
+      print("coordinates "+i);
+     
+     for (j=0; j<x.length; j++){
+      print("  ", j+"-" ,x[j]+"-", y[j]);
+     }
+   
+  }
+
+
+    run("Show All");
