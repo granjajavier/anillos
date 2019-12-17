@@ -1,0 +1,125 @@
+print("\\Clear");
+ run("8-bit");
+//setTool("line");
+Overlay.clear;
+w=getWidth;
+h=getHeight;
+//---------------------------dibujar la linea central
+if((h%2)==1){c=(h+1)/2;}
+ else{c=h/2;}
+  setColor("red");
+  Overlay.drawLine(0,c,w,c);
+  Overlay.show;
+ setColor("orange");
+  Overlay.drawLine(0,c-50,w,c-50);
+  Overlay.show;
+ 
+ setColor("blue");
+  Overlay.drawLine(0,c+50,w,c+50);
+  Overlay.show;
+ 
+ puntos=newArray(1);
+ puntosordenados=newArray(1);
+ ordenroi=newArray(1);
+ espesores=newArray(1);
+if(puntos.length>0){puntos=Array.trim(puntos,0);}
+if( puntosordenados.length>0){ puntosordenados=Array.trim( puntosordenados,0);}
+if(ordenroi.length>0){ordenroi=Array.trim(ordenroi,0);}
+if(espesores.length>0){espesores=Array.trim(espesores,0);}
+//------------------------calcular los puntos de interseccion de la recta central con las tangentes
+ n = roiManager("count");
+  print(n);
+  for (i=0; i<n; i++) {
+      roiManager("select", i);
+      Roi.setName(i);
+      Roi.getCoordinates(x, y);
+      //print("coordinates "+i);
+     
+     for (j=0; j<x.length; j++){
+      //print("  ", j+"-" ,x[j]+"-", y[j]);
+     }
+     xx=x[0]+(x[1]-x[0])*((c-y[0])/(y[1]-y[0]));
+    // setColor("pink");
+    // Overlay.drawLine(xx,0,xx,h);
+    // Overlay.show;
+     puntos=Array.concat(puntos,xx);
+  }
+//------------------------ordenar y renombrar el roi manager
+ puntosordenados=Array.copy(puntos);
+ Array.sort(puntosordenados);
+ for (i=0; i<puntosordenados.length; i++) { 
+ 	
+  for (j=0; j<puntos.length; j++) {
+     
+     if(puntosordenados[i]==puntos[j]){
+     	ordenroi=Array.concat(ordenroi,j);
+        break;
+     	}//fin if
+  }//fin for j
+ }//fin for i
+//Array.show(puntos, puntosordenados,ordenroi);
+
+  for (i=0; i<ordenroi.length; i++) {	
+  roiManager("Select", ordenroi[i]);
+  if(i<10){roiManager("Rename", "tangente 0"+i);}
+  else{roiManager("Rename", "tangente "+i);}
+  
+  }//fin for i
+roiManager("Sort");
+//-----------------------calcular la distancia punto recta(distancia anillo)
+ espesores=
+ n = roiManager("count");
+ for (i=1; i<n; i++) {
+      roiManager("select", i);
+      Roi.setName(i);
+      Roi.getCoordinates(x, y);
+          
+      m=(y[1]-y[0])/(x[1]-x[0]);
+      b=y[1]-m*x[1];
+      
+      d=abs(m*puntosordenados[i-1]-c+b)/sqrt(m*m+1);
+      
+      mp=-1/m;
+      alfa=atan(mp);
+      ppx=puntosordenados[i-1]+d*cos(alfa);
+      ppy=c+d*sin(alfa);
+      setColor("green");
+      Overlay.drawLine(puntosordenados[i-1],c,ppx,ppy);
+      Overlay.show;
+       espesores=Array.concat(espesores,d);
+ }//fin for
+ //-------------------------dibujar Plot de espesores
+ /*
+  anos = espesores.length;
+  xxx = Array.getSequence(anos);
+ 
+  Plot.create("Espesor anillos", "años", "espesor");
+  Plot.setColor("red", "red");
+  Plot.add("circle", xxx, espesores);
+  Plot.setColor("black");
+  Plot.setLineWidth(2);
+  Plot.add("line", xxx, espesores);
+  Plot.setFontSize(14);
+  Plot.addLegend("años--espesores ");
+  */
+//-------------------------año de comienzo
+  Dialog.create("Año de comienzo");
+  Dialog.addNumber("año de comienzo:", 2017);
+  Dialog.show();
+ anocomienzo =Dialog.getNumber(); 
+//-------------------------guardar archivo .csv
+ filename = getInfo("image.filename");
+ dir = getInfo("image.directory");
+ recorte=lengthOf(filename)-4;
+ filename=substring(filename, 0, recorte);
+print(filename,dir);
+
+ saveAs("text", dir+filename);
+   f = File.open(dir+filename+".txt"); // display file open dialog
+  
+//saveAs("Results", "/home/javierg/Downloads/zzz.csv");
+for (i=1; i<espesores.length; i++) {
+	  print(f, i + "  ," +anocomienzo-i+1 + "  ,"+d2s(espesores[i],6));
+}//fin for
+
+   run("Show All");
